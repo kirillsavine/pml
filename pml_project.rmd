@@ -1,0 +1,123 @@
+---
+title: "Practical Machine Learning: Course Project"
+output:
+  html_document:
+    toc: true
+    theme: united
+---
+
+
+
+## Loading packages
+```{r}
+library(caret)
+library(rattle)
+library(randomForest)
+```
+
+## Loading data
+```{r}
+d_tr=read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"))
+d_te=read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"))
+```
+
+## Explore and clean data
+```{r}
+table(d_tr$classe)
+```
+
+See which variables contain NA values, and what is the percentage of those NA values.
+```{r}
+cols_contain_na=unlist(lapply(d_tr,function(x){as.numeric(ifelse(is.na(table(is.na(x))['TRUE']),0,table(is.na(x))['TRUE']/nrow(d_tr)))}))
+cols_contain_na=cols_contain_na[cols_contain_na>0]
+length(cols_contain_na)
+```
+67 columns have 97% of their values NA
+```{r}
+head(as.data.frame(cols_contain_na))
+```
+Drop these 67 variables from our dataset.
+```{r}
+d_tr=d_tr[,names(d_tr)[!(names(d_tr) %in% names(cols_contain_na))]]
+```
+
+Furthermore, looks like the following columns just carry some 
+additional meta-data such as username of the person, timestamp etc, 
+I will drop these irrelevant columns.
+```{r}
+irrelevant_cols=c("X", "user_name","raw_timestamp_part_1","raw_timestamp_part_2","cvtd_timestamp","new_window","num_window")
+d_tr=d_tr[,names(d_tr)[!(names(d_tr) %in% irrelevant_cols)]]
+```
+
+Dropping near-zero varibales:
+```{r}
+near_zero_vars=names(d_tr)[nearZeroVar(d_tr)]
+d_tr=d_tr[,names(d_tr)[!(names(d_tr) %in% near_zero_vars)]]
+```
+
+Partitioning the dataset into training (`d_va70`) and validation (`d_va30`), 
+using 70/30 ratio.
+```{r}
+inTrain <- createDataPartition(d_tr$classe, p = 0.7, list = FALSE)
+d_tr70 <- d_tr[inTrain, ] # d_tr70 dataset will be used for training
+d_va30 <- d_tr[-inTrain, ] # d_tr30 dataset will be used for testing
+```
+## Fitting a Decision Tree Model
+```{r, include=FALSE}
+nrow(d_tr70)
+length(names(d_tr70))
+names(d_tr70)
+head(d_tr70)
+```
+
+Using 5-fold cross validation to train a decision tree model.
+```{r}
+control <- trainControl(method = "cv", number = 5)
+fit_rpart=train(classe ~ ., data = d_tr70, method = "rpart",trControl = control)
+fit_rpart
+```
+```{r}
+fancyRpartPlot(fit_rpart$finalModel)
+```
+
+Predicting using validation dataset:
+```{r}
+pred_rpart=predict(fit_rpart,d_va30)
+conf_rpart=confusionMatrix(pred_rpart, d_va30$classe)
+conf_rpart
+```
+
+Based on the desicion tree model prediction, and confusion matrix, the accuracy
+if the data is approximately 50%.
+
+
+## Fitting a  Random Forest Model
+```{r}
+#fit_rf=randomForest(classe ~ ., data=d_tr70)
+fit_rf=randomForest(classe ~ ., data=d_tr70)
+fit_rf
+```
+
+
+Predicting the random forest model using the validation dataset.
+The accuracy of the random forest model is over 99% when tested on the 
+validation dataset. The out-of-sample error is less than 1%, which is 
+essentially `1 - accuracy`.  
+```{r}
+pred_rf=predict(fit_rf,d_va30)
+conf_rf=confusionMatrix(pred_rf, d_va30$classe)
+conf_rf
+```
+
+## Predicting the Test Data Set with the Selected Model
+```{r}
+pred_final=predict(fit_rf,d_te)
+```
+
+We are asked to predict `classe` based on 20 observations. 
+Predicted array is shown below:		
+```{r}
+pred_final
+```
+
+
