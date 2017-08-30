@@ -1,4 +1,4 @@
-# Practical Machine Learning - Course Project Sumbission
+# Practical Machine Learning - Course Project Submission
 
 ### Original Instructions
 source: https://www.coursera.org/learn/practical-machine-learning/peer/R43St/prediction-assignment-writeup
