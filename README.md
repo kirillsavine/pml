@@ -1,6 +1,7 @@
 # Practical Machine Learning - Course Project Submission
 
 Rendered HTML: https://kirillsavine.github.io/pml_project.html
+
 Raw R-Markdown: https://raw.githubusercontent.com/kirillsavine/pml/master/pml_project.rmd
 
 ### Original Instructions
